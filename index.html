@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Snake Game</title>
+    <style>
+        body {
+            background: #222;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            user-select: none;
+            font-family: Arial, sans-serif;
+        }
+        #gameBox {
+            background: #111;
+            border: 4px solid #4CAF50;
+            box-shadow: 0 4px 24px #0008;
+            position: relative;
+        }
+        #score {
+            color: #fff;
+            text-align: center;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            letter-spacing: 2px;
+        }
+        #gameOver {
+            position: absolute;
+            left: 0; top: 0;
+            width: 100%; height: 100%;
+            background: rgba(0,0,0,0.75);
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            font-size: 2em;
+            z-index: 2;
+        }
+        #restartBtn {
+            padding: 10px 35px;
+            margin-top: 17px;
+            font-size: 1rem;
+            border: none;
+            background: #4CAF50;
+            color: #fff;
+            border-radius: 3px;
+            cursor: pointer;
+            letter-spacing: 2px;
+            transition: background 0.2s;
+        }
+        #restartBtn:hover {
+            background: #388E3C;
+        }
+    </style>
+</head>
+<body>
+    <div>
+        <div id="score">Score: 0</div>
+        <div id="gameBox">
+            <canvas id="game" width="400" height="400"></canvas>
+            <div id="gameOver" style="display:none;">
+                <div id="overMsg"></div>
+                <button id="restartBtn">Restart</button>
+            </div>
+        </div>
+    </div>
+    <script>
+    //--- CONFIG ---//
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const boxSize = 20;
+    const canvasSize = 400;
+    const row = canvasSize / boxSize;
+    const col = canvasSize / boxSize;
+
+    //--- GAME STATE ---//
+    let snake, direction, food, score, gameInterval, isGameOver;
+
+    //--- INIT ---//
+    function initGame() {
+        snake = [
+            { x: 9, y: 9 },
+            { x: 8, y: 9 },
+            { x: 7, y: 9 }
+        ];
+        direction = 'RIGHT';
+        placeFood();
+        score = 0;
+        isGameOver = false;
+        document.getElementById('score').textContent = "Score: 0";
+        document.getElementById('gameOver').style.display = "none";
+        clearInterval(gameInterval);
+        gameInterval = setInterval(gameLoop, 100);
+    }
+
+    //--- PLACE FOOD ---//
+    function placeFood() {
+        let valid = false;
+        while(!valid) {
+            food = {
+                x: Math.floor(Math.random() * col),
+                y: Math.floor(Math.random() * row)
+            };
+            valid = !snake.some(segment => segment.x === food.x && segment.y === food.y);
+        }
+    }
+
+    //--- DRAW ---//
+    function draw() {
+        // Background
+        ctx.fillStyle = "#181818";
+        ctx.fillRect(0, 0, canvasSize, canvasSize);
+
+        // Snake
+        snake.forEach((segment, i) => {
+            ctx.fillStyle = i === 0 ? "#e91e63" : "#4CAF50";
+            ctx.fillRect(segment.x * boxSize, segment.y * boxSize, boxSize-1, boxSize-1);
+        });
+
+        // Food
+        ctx.fillStyle = "#ffc107";
+        ctx.fillRect(food.x * boxSize, food.y * boxSize, boxSize-1, boxSize-1);
+    }
+
+    //--- GAME LOOP ---//
+    function gameLoop() {
+        // Get new head position
+        let head = { ...snake[0] };
+        if (direction === "LEFT") head.x -= 1;
+        else if (direction === "UP") head.y -= 1;
+        else if (direction === "RIGHT") head.x += 1;
+        else if (direction === "DOWN") head.y += 1;
+
+        // Border collision
+        if (head.x < 0 || head.y < 0 || head.x >= col || head.y >= row) {
+            endGame();
+            return;
+        }
+
+        // Self collision
+        if (snake.some(segment => segment.x === head.x && segment.y === head.y)) {
+            endGame();
+            return;
+        }
+
+        snake.unshift(head);
+
+        // Eating food
+        if (head.x === food.x && head.y === food.y) {
+            score++;
+            document.getElementById('score').textContent = "Score: " + score;
+            placeFood();
+        } else {
+            snake.pop();
+        }
+
+        draw();
+    }
+
+    //--- HANDLE KEYS ---//
+    document.addEventListener('keydown', function(e) {
+        if (isGameOver) return;
+        const dirs = {
+            'ArrowLeft': 'LEFT', 'a': 'LEFT', 'A': 'LEFT',
+            'ArrowUp': 'UP', 'w': 'UP', 'W': 'UP',
+            'ArrowRight': 'RIGHT', 'd': 'RIGHT', 'D': 'RIGHT',
+            'ArrowDown': 'DOWN', 's': 'DOWN', 'S': 'DOWN'
+        };
+        const newDir = dirs[e.key];
+        if (newDir) {
+            if ((direction === 'LEFT' && newDir !== 'RIGHT') ||
+                (direction === 'RIGHT' && newDir !== 'LEFT') ||
+                (direction === 'UP' && newDir !== 'DOWN') ||
+                (direction === 'DOWN' && newDir !== 'UP')) {
+                direction = newDir;
+            }
+        }
+    });
+
+    //--- GAME OVER ---//
+    function endGame() {
+        clearInterval(gameInterval);
+        isGameOver = true;
+        document.getElementById('gameOver').style.display = "flex";
+        document.getElementById('overMsg').textContent = "Game Over\nScore: " + score;
+    }
+
+    //--- RESTART BUTTON ---//
+    document.getElementById('restartBtn').onclick = initGame;
+
+    //--- LAUNCH GAME ---//
+    initGame();
+    </script>
+</body>
+</html>
