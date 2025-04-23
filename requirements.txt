@@ -19,3 +19,5 @@ numpy
 scikit-learn
 streamlit
 azure-ai-inference
+pydantic
+pydantic[email]
